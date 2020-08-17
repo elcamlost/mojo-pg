@@ -117,6 +117,21 @@ subtest 'JSON' => sub {
   is_query \@sql, ['SELECT * FROM "foo" WHERE ( "bar" = ? )', {json => [1, 2, 3]}], 'right query';
 };
 
+subtest 'ANY' => sub {
+  my @sql = $abstract->select('foo', '*', {bar => {'like' => {-any => [1, 2, '%3%']}}});
+  is_query \@sql, ['SELECT * FROM "foo" WHERE ( "bar" like any(?) )', [1, 2, '%3%']], 'right query';
+  @sql = $abstract->select('foo', '*', {bar => {'=' => {-any => [1, 2, 3]}}});
+  is_query \@sql, ['SELECT * FROM "foo" WHERE ( "bar" = any(?) )', [1, 2, 3]], 'right query';
+  @sql = $abstract->select('foo', '*', {bar => {'!=' => {-any => [1, 2, 3]}}});
+  is_query \@sql, ['SELECT * FROM "foo" WHERE ( "bar" != any(?) )', [1, 2, 3]], 'right query';
+  @sql = $abstract->select('foo', '*', {bar => {'=' => {-any => []}}});
+  is_query \@sql, ['SELECT * FROM "foo" WHERE ( "bar" = any(?) )', []], 'right query';
+  @sql = $abstract->select('foo', '*', {bar => {-any => [1, 2, 3]}});
+  is_query \@sql, ['SELECT * FROM "foo" WHERE ( "bar" = any(?) )', [1, 2, 3]], 'right query';
+  @sql = $abstract->select('foo', '*', {bar => {-any => []}});
+  is_query \@sql, ['SELECT * FROM "foo" WHERE ( "bar" = any(?) )', []], 'right query';
+};
+
 subtest 'JOIN' => sub {
   my @sql = $abstract->select(['foo', ['bar', foo_id => 'id']]);
   is_query \@sql, ['SELECT * FROM "foo" JOIN "bar" ON ("bar"."foo_id" = "foo"."id")'], 'right query';

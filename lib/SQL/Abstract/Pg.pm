@@ -13,9 +13,21 @@ sub new {
   my $self = shift->SUPER::new(@_);
 
   # -json op
-  push @{$self->{unary_ops}}, {
-    regex   => qr/^json$/,
-    handler => sub { '?', {json => $_[2]} }
+  push @{$self->{unary_ops}}, (
+    {
+      regex   => qr/^json$/,
+      handler => sub { '?', {json => $_[2]} }
+    },
+    {
+      regex   => qr/^any/,
+      handler => sub { 'any(?)', $_[2] }
+    }
+  );
+  push @{$self->{special_ops}}, {
+    regex   => qr/^any/,
+    handler => sub {
+      $_[0]->_quote($_[1]) . ' = any(?)', $_[3];
+    }
   };
 
   return $self;
@@ -200,6 +212,17 @@ L<SQL::Abstract::Pg> extends L<SQL::Abstract> with a few PostgreSQL features use
 =head2 JSON
 
 In many places (as supported by L<SQL::Abstract>) you can use the C<-json> unary op to encode JSON from Perl data
+structures.
+
+  # "update some_table set foo = '[1,2,3]' where bar = 23"
+  $abstract->update('some_table', {foo => {-json => [1, 2, 3]}}, {bar => 23});
+
+  # "select * from some_table where foo = '[1,2,3]'"
+  $abstract->select('some_table', '*', {foo => {'=' => {-json => [1, 2, 3]}}});
+
+=head2 ANY
+
+In many places (as supported by L<SQL::Abstract>) you can use the C<-any> unary and special op to encode JSON from Perl data
 structures.
 
   # "update some_table set foo = '[1,2,3]' where bar = 23"
